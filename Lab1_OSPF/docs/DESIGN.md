@@ -27,10 +27,10 @@ graph TD
     end
 
     %% Kết nối
-    R4 <===>|P2P - 10.10.14.x| R1
-    R2 <--->|Đường Chính| R5
-    R5 <--->|Đường Chính| R6
-    R2 -.->|Dự phòng (Cost 500)| R6
+    R4 <==>|"P2P - 10.10.14.x"| R1
+    R2 <-->|"Đường Chính"| R5
+    R5 <-->|"Đường Chính"| R6
+    R2 -.->|"Dự phòng (Cost 500)"| R6
     
     %% Style hiển thị
     classDef router fill:#f9f,stroke:#333,stroke-width:2px;
