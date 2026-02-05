@@ -699,9 +699,14 @@ class TestMenu:
         gv1 = self.net.get('giangvien1')
         
         print("\n[Test 4.1] Internet → DMZ Web Server (port 80) - SHOULD ALLOW\n")
-        print(">>> internet curl http://172.16.10.100")
-        result = internet.cmd('curl -s -m 3 http://172.16.10.100')
-        print(result if result.strip() else "(No response)")
+        print(">>> internet wget http://172.16.10.100")
+        result = internet.cmd('wget -qO- --timeout=3 http://172.16.10.100 2>&1')
+        if result.strip() and "<html>" in result:
+            print(result)
+            print("\n✅ PASS: HTTP access from Internet to DMZ allowed")
+        else:
+            print(result if result.strip() else "(No response)")
+            print("\n❌ FAIL: Cannot access web server")
         
         print("\n[Test 4.2] Internet → Inside VLAN 20 - SHOULD BLOCK\n")
         print(">>> internet ping -c 3 -W 2 giangvien1 (10.1.2.10)")
@@ -740,9 +745,14 @@ class TestMenu:
         print(result)
         
         print("\n[Test 5.3] VLAN 10 → DMZ HTTP - SHOULD ALLOW\n")
-        print(">>> sinhvien1 curl http://172.16.10.100")
-        result = sv1.cmd('curl -s -m 3 http://172.16.10.100')
-        print(result if result.strip() else "(No response)")
+        print(">>> sinhvien1 wget http://172.16.10.100")
+        result = sv1.cmd('wget -qO- --timeout=3 http://172.16.10.100 2>&1')
+        if result.strip() and "<html>" in result:
+            print(result)
+            print("\n✅ PASS: HTTP access from VLAN 10 to DMZ allowed")
+        else:
+            print(result if result.strip() else "(No response)")
+            print("\n❌ FAIL: Cannot access web server")
             
         print("\n[Test 5.4] VLAN 20 → VLAN 10 - SHOULD ALLOW\n")
         print(">>> giangvien1 ping -c 3 sinhvien1 (10.1.1.10)")
@@ -762,61 +772,106 @@ class TestMenu:
         gv1 = self.net.get('giangvien1')
         r1 = self.net.get('r1')
         
-        # Start SSH server trên router
-        print("\nChuẩn bị SSH service trên router...")
+        # Start REAL TCP server trên router để test ACL đúng
+        print("\nChuẩn bị TCP service trên router port 22...")
         
-        # Kiểm tra và start SSH daemon
-        r1.cmd('mkdir -p /var/run/sshd')
-        r1.cmd('chmod 755 /var/run/sshd')
+        # Tạo Python TCP server script  
+        tcp_server_script = '''import socket
+import sys
+server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+server.bind(("0.0.0.0", 22))
+server.listen(5)
+sys.stderr.write("Server started\\n")
+sys.stderr.flush()
+while True:
+    try:
+        client, addr = server.accept()
+        client.send(b"SSH-2.0-Test\\n")
+        client.close()
+    except:
+        pass
+'''
         
-        # Try to start SSH daemon (may not work in Mininet, that's OK)
-        r1.cmd('/usr/sbin/sshd -o ListenAddress=0.0.0.0 2>/dev/null &')
-        time.sleep(1)
+        # Lưu và chạy server
+        r1.cmd('cat > /tmp/tcp_srv.py << "EOFPYTHON"\n' + tcp_server_script + '\nEOFPYTHON')
+        r1.cmd('python3 /tmp/tcp_srv.py 2>/dev/null &')
+        time.sleep(2)
         
-        # Fallback: Start a simple TCP listener on port 22 để test ACL
-        # (vì SSH thật có thể không hoạt động trong Mininet host)
-        print("Starting TCP listener on port 22 for testing...")
-        r1.cmd('nc -l -p 22 -k 2>/dev/null &')
-        time.sleep(1)
+        # Verify server is running
+        check = r1.cmd('ss -tln | grep ":22"')
+        if check.strip():
+            print("✅ TCP Server running on port 22\n")
+        else:
+            print("⚠️  Server may not be running\n")
+
         
-        print("Service started.\n")
+        # Tạo connection test script bằng Python
+        conn_test = '''import socket,sys
+s=socket.socket()
+s.settimeout(3)
+try:
+ s.connect((sys.argv[1],int(sys.argv[2])))
+ print("CONNECTED")
+ s.close()
+except socket.timeout:
+ print("TIMEOUT")
+except Exception as e:
+ print("FAILED:",e)
+'''
         
+        # Test 6.1: admin1 SHOULD CONNECT (allowed by firewall)
         print("[Test 6.1] SSH từ admin1 (10.1.2.50) - SHOULD ALLOW\n")
-        print(">>> admin1 nc -zv -w 2 10.1.2.1 22")
-        result = admin1.cmd('nc -zv -w 2 10.1.2.1 22 2>&1')
-        print(result if result.strip() else "(Connection attempt)")
+        print(">>> admin1 testing connection to router:22")
         
-        # Kiểm tra kết quả
-        if "succeeded" in result or "open" in result:
+        admin1.cmd('cat > /tmp/t.py << "EOF"\n' + conn_test + '\nEOF')
+        result = admin1.cmd('python3 /tmp/t.py 10.1.2.1 22 2>&1')
+        print(f"Result: {result.strip()}")
+        
+        if "CONNECTED" in result:
             print("✅ PASS: Connection succeeded (allowed by ACL)")
-        elif "refused" in result:
-            print("⚠️  Connection refused (ACL allowed, but service issue)")
+        elif "TIMEOUT" in result or "FAILED" in result:
+            print("❌ FAIL: Connection blocked or failed (should be allowed)")
         else:
-            print("❌ FAIL: Connection blocked or timed out")
+            print(f"⚠️  Unexpected: {result.strip()}")
             
+        # Test 6.2: sinhvien1 SHOULD BE BLOCKED
         print("\n[Test 6.2] SSH từ sinhvien1 - SHOULD BLOCK\n")
-        print(">>> sinhvien1 nc -zv -w 2 10.1.1.1 22")
-        result = sv1.cmd('nc -zv -w 2 10.1.1.1 22 2>&1')
-        print(result if result.strip() else "(Connection timeout - blocked by firewall)")
+        print(">>> sinhvien1 testing connection to router:22")
         
-        if "timed out" in result or result.strip() == "":
+        sv1.cmd('cat > /tmp/t.py << "EOF"\n' + conn_test + '\nEOF')
+        result = sv1.cmd('timeout 5 python3 /tmp/t.py 10.1.1.1 22 2>&1 || echo "BLOCKED"')
+        print(f"Result: {result.strip()}")
+        
+        if "TIMEOUT" in result or "BLOCKED" in result or "FAILED" in result:
             print("✅ PASS: Connection blocked (as expected)")
+        elif "CONNECTED" in result:
+            print("❌ FAIL: Connection succeeded (should be blocked)")
         else:
-            print("❌ FAIL: Connection should be blocked")
+            print(f"⚠️  Unexpected: {result.strip()}")
             
+        # Test 6.3: giangvien1 (not admin) SHOULD BE BLOCKED  
         print("\n[Test 6.3] SSH từ giangvien1 (không phải admin) - SHOULD BLOCK\n")
-        print(">>> giangvien1 nc -zv -w 2 10.1.2.1 22")
-        result = gv1.cmd('nc -zv -w 2 10.1.2.1 22 2>&1')
-        print(result if result.strip() else "(Connection timeout - blocked by firewall)")
+        print(">>> giangvien1 testing connection to router:22")
         
-        if "timed out" in result or result.strip() == "":
+        gv1.cmd('cat > /tmp/t.py << "EOF"\n' + conn_test + '\nEOF')
+        result = gv1.cmd('timeout 5 python3 /tmp/t.py 10.1.2.1 22 2>&1 || echo "BLOCKED"')
+        print(f"Result: {result.strip()}")
+        
+        if "TIMEOUT" in result or "BLOCKED" in result or "FAILED" in result:
             print("✅ PASS: Connection blocked (as expected)")
+        elif "CONNECTED" in result:
+            print("❌ FAIL: Connection succeeded (should be blocked)")
         else:
-            print("❌ FAIL: Connection should be blocked")
+            print(f"⚠️  Unexpected: {result.strip()}")
         
         # Cleanup
-        r1.cmd('killall nc 2>/dev/null')
-        r1.cmd('killall sshd 2>/dev/null')
+        r1.cmd('pkill -f tcp_srv.py 2>/dev/null')
+        r1.cmd('rm -f /tmp/tcp_srv.py')
+        admin1.cmd('rm -f /tmp/t.py')
+        sv1.cmd('rm -f /tmp/t.py')
+        gv1.cmd('rm -f /tmp/t.py')
+
             
         input("\nNhấn Enter để tiếp tục...")
         
@@ -832,19 +887,34 @@ class TestMenu:
         webserver = self.net.get('webserver')
         
         print("\n[Test 7.1] HTTP Server từ VLAN 10\n")
-        print(">>> sinhvien1 curl http://172.16.10.100")
-        result = sv1.cmd('curl -s -m 3 http://172.16.10.100')
-        print(result if result.strip() else "(No response)")
+        print(">>> sinhvien1 wget http://172.16.10.100")
+        result = sv1.cmd('wget -qO- --timeout=3 http://172.16.10.100 2>&1')
+        if result.strip() and "<html>" in result:
+            print(result)
+            print("✅ SUCCESS")
+        else:
+            print(result if result.strip() else "(No response)")
+            print("❌ FAILED")
         
         print("\n[Test 7.2] HTTP Server từ VLAN 20\n")
-        print(">>> giangvien1 curl http://172.16.10.100")
-        result = gv1.cmd('curl -s -m 3 http://172.16.10.100')
-        print(result if result.strip() else "(No response)")
+        print(">>> giangvien1 wget http://172.16.10.100")
+        result = gv1.cmd('wget -qO- --timeout=3 http://172.16.10.100 2>&1')
+        if result.strip() and "<html>" in result:
+            print(result)
+            print("✅ SUCCESS")
+        else:
+            print(result if result.strip() else "(No response)")
+            print("❌ FAILED")
         
         print("\n[Test 7.3] HTTP Server từ Internet (Outside)\n")
-        print(">>> internet curl http://172.16.10.100")
-        result = internet.cmd('curl -s -m 3 http://172.16.10.100')
-        print(result if result.strip() else "(No response)")
+        print(">>> internet wget http://172.16.10.100")
+        result = internet.cmd('wget -qO- --timeout=3 http://172.16.10.100 2>&1')
+        if result.strip() and "<html>" in result:
+            print(result)
+            print("✅ SUCCESS")
+        else:
+            print(result if result.strip() else "(No response)")
+            print("❌ FAILED")
         
         print("\n[Test 7.4] Xem nội dung file index.html trên webserver\n")
         print(">>> webserver cat /tmp/index.html")
