@@ -1,0 +1,14 @@
+# Ignore everything by default
+*
+
+# Exception: Directories we want to track
+!docs/
+!resources/
+
+# Exception: Files we want to track
+!README.md
+!.gitignore
+
+# Exception: Contents of the tracked directories
+!docs/**
+!resources/**
