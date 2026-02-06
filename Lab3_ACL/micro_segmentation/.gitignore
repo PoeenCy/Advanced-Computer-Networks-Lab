@@ -4,6 +4,7 @@
 # Exception: Directories we want to track
 !docs/
 !resources/
+!scripts/
 
 # Exception: Files we want to track
 !README.md
@@ -12,3 +13,4 @@
 # Exception: Contents of the tracked directories
 !docs/**
 !resources/**
+!scripts/infrastructure.py
