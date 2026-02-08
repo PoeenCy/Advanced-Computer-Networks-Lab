@@ -4,7 +4,24 @@
 
 ---
 
-## 📚 TÀI LIỆU HƯỚNG DẪN
+## � TÓM TẮT ĐỀ BÀI
+
+| Mục | Nội dung |
+|:---|:---|
+| **🎯 Mục tiêu** | Thiết kế hạ tầng mạng doanh nghiệp theo mô hình **Zero Trust**, ngăn chặn tấn công lan truyền (Lateral Movement) từ IoT Zone |
+| **🏢 Kịch bản** | Tập đoàn TechVerse phát hiện malware trên camera IoT, cần gia cố toàn bộ hệ thống mạng |
+| **🔧 Công nghệ** | OSPF Multi-Area (4 areas), Extended ACLs (5 policies), DMZ, MD5 Authentication, 3-Layer Architecture |
+| **🌐 Topology** | 6 Routers, 4 OSPF Areas (Area 0-Backbone, 10-HQ, 20-DMZ, 30-IoT Stub), 4 Security Zones |
+| **🛡️ Bảo mật** | IoT Zone cách ly hoàn toàn (Totally Stubby Area + ACLs), DMZ không truy cập Inside, Staff không truy cập Management |
+| **💻 Môi trường** | **Mininet trên Linux** (Ubuntu/Kali) - FRRouting + iptables |
+| **📚 Học liệu** | [FOUNDATIONS.md](./docs/FOUNDATIONS.md) (Phân tích PCWorld), [SCENARIO.md](./docs/SCENARIO.md) (Bối cảnh), [TOPOLOGY.md](./docs/TOPOLOGY.md) (Thiết kế), [REQUIREMENTS.md](./docs/REQUIREMENTS.md) (Yêu cầu), [VERIFICATION.md](./docs/VERIFICATION.md) (Test cases) |
+| **⚠️ Lưu ý** | **KHÔNG có cấu hình mẫu** - Sinh viên phải tự research và thiết kế |
+
+**Đọc thứ tự khuyến nghị:** FOUNDATIONS → SCENARIO → TOPOLOGY → REQUIREMENTS → VERIFICATION
+
+---
+
+## �📚 TÀI LIỆU HƯỚNG DẪN
 
 Để hoàn thành đồ án này, sinh viên cần nghiên cứu kỹ các tài liệu sau theo thứ tự:
 
@@ -104,35 +121,33 @@ Sau khi hoàn thành đồ án, sinh viên sẽ:
 
 ## 📋 QUY TRÌNH THỰC HIỆN
 
-### Bước 1: Nghiên cứu lý thuyết (2-3 giờ)
+### Bước 1: Nghiên cứu lý thuyết 
 1. Đọc kỹ [FOUNDATIONS.md](./docs/FOUNDATIONS.md)
 2. Đọc [SCENARIO.md](./docs/SCENARIO.md)
 3. Ghi chú các điểm quan trọng
 
-### Bước 2: Thiết kế (1-2 giờ)
+### Bước 2: Thiết kế 
 1. Đọc [TOPOLOGY.md](./docs/TOPOLOGY.md)
 2. Vẽ lại sơ đồ theo hiểu biết của mình
 3. Quy hoạch IP addresses
 4. Thiết kế OSPF areas
 5. Lập danh sách ACL policies cần thiết
 
-### Bước 3: Triển khai (3-4 giờ)
+### Bước 3: Triển khai 
 1. Tạo Mininet topology
 2. Cấu hình OSPF trên các router
 3. Triển khai ACLs
 4. Áp dụng security hardening
 
-### Bước 4: Kiểm chứng (1-2 giờ)
+### Bước 4: Kiểm chứng 
 1. Thực hiện tất cả test cases trong [VERIFICATION.md](./docs/VERIFICATION.md)
 2. Ghi lại kết quả (screenshot, logs)
 3. Phân tích kết quả bất thường
 
-### Bước 5: Báo cáo (1-2 giờ)
+### Bước 5: Báo cáo 
 1. Viết báo cáo theo template
 2. Giải thích các quyết định thiết kế
 3. Trả lời các câu hỏi lý thuyết
-
-**Tổng thời gian ước tính:** 8-13 giờ
 
 ---
 
