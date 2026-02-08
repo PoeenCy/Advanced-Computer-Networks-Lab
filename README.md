@@ -62,38 +62,6 @@ Repository này chứa các bài thực hành về thiết kế và triển khai
 
 ---
 
-## 🎯 LỘ TRÌNH HỌC TẬP KHUYẾN NGHỊ
-
-```
-Lab 1 (OSPF)
-    ↓
-    Học: Định tuyến động, hierarchical design, failover
-    ↓
-Lab 2.1 (3-Layer ACLs)
-    ↓
-    Học: ACLs, DMZ, security zones
-    ↓
-Lab 2.2 (Micro-segmentation)
-    ↓
-    Học: Zero Trust, isolation, attack defense
-    ↓
-Lab 3 (Tích hợp toàn bộ)
-    ↓
-    Áp dụng: OSPF + ACLs + Defense in Depth
-```
-
----
-
-## 🛠️ CÔNG CỤ & MÔI TRƯỜNG
-
-| Công cụ | Mục đích | Cài đặt |
-|:---|:---|:---|
-| **Mininet** | Network emulation | `sudo apt install mininet` |
-| **FRRouting** | OSPF routing daemon | `sudo apt install frr` |
-| **Open vSwitch** | Virtual switching | `sudo apt install openvswitch-switch` |
-| **iptables** | ACL/Firewall simulation | Built-in Linux |
-| **Python 3** | Automation scripts | `sudo apt install python3` |
-
 **OS khuyến nghị:** Ubuntu 20.04+, Kali Linux, Debian 11+
 
 ---
@@ -118,7 +86,6 @@ Lab 3 (Tích hợp toàn bộ)
 
 **Tác giả:** Trần Thanh Nhã - Huỳnh Văn Dũng  
 **Môn học:** Mạng Máy Tính Nâng Cao  
-**Phiên bản:** 2.0 (Tháng 2/2026)
 
 ---
 
@@ -127,7 +94,5 @@ Lab 3 (Tích hợp toàn bộ)
 Tài liệu này được phát triển cho mục đích giáo dục. Mọi sử dụng vì mục đích thương mại phải được sự cho phép.
 
 ---
-
-> **"In theory, theory and practice are the same. In practice, they are not."** — Yogi Berra
 
 **Chúc các bạn học tốt! 🚀**
