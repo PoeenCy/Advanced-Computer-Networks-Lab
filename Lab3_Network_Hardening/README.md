@@ -93,28 +93,6 @@ Sau khi hoàn thành đồ án, sinh viên sẽ:
 
 ### Yêu cầu bắt buộc: Mininet
 
-Đồ án này **BẮT BUỘC** sử dụng **Mininet** trên Linux để mô phỏng.
-
-**Lý do chọn Mininet:**
-- Lightweight, dễ dàng tạo topology phức tạp
-- Sử dụng Linux network stack thực (không giả lập)
-- Dễ dàng integration với Python scripts
-- Có thể test traffic thực với iptables/tc
-
-### Cài đặt môi trường
-
-```bash
-# Trên Ubuntu/Debian
-sudo apt update
-sudo apt install mininet openvswitch-switch
-
-# Trên Kali Linux (đã có sẵn)
-sudo apt install mininet
-
-# Kiểm tra cài đặt
-sudo mn --version
-```
-
 ### Hệ thống khuyến nghị
 
 - **OS:** Ubuntu 20.04+, Kali Linux, hoặc Debian 11+
@@ -172,22 +150,6 @@ sudo mn --version
 - Trong thực tế, bạn sẽ phải tự tìm cách giải quyết vấn đề
 - Học sâu hơn khi tự research và thử nghiệm
 
-### 📖 Tài liệu Tham khảo Cho phép
-
-Sinh viên **ĐƯỢC PHÉP** sử dụng:
-- ✅ Tài liệu Cisco IOS chính thức
-- ✅ RFC 2328 (OSPF v2)
-- ✅ Man pages của Linux (iptables, tc, ovs-ofctl)
-- ✅ Mininet documentation
-- ✅ Sách giáo trình đã học
-- ✅ Thảo luận với bạn cùng lớp (không copy code)
-
-### 🚫 Hành vi Cấm
-
-- ❌ Copy configuration scripts từ Internet
-- ❌ Sử dụng AI để generate configs (trừ khi được phép rõ ràng)
-- ❌ Nộp bài giống hệt bạn khác
-
 ---
 
 ## 🆘 HỖ TRỢ & TÀI LIỆU THAM KHẢO
@@ -200,7 +162,7 @@ Sinh viên **ĐƯỢC PHÉP** sử dụng:
 
 ### Câu hỏi thường gặp
 
-**Q: Tôi có thể dùng GNS3 thay vì Mininet không?**
+**Q: Tôi có thể dùng Cisco Packet Tracer thay vì Mininet không?**
 A: Bài lab này được thiết kế cho Mininet để đảm bảo môi trường đồng nhất.
 
 **Q: Tôi không biết cách cấu hình OSPF Totally Stubby Area?**
@@ -221,7 +183,7 @@ Tài liệu này được phát triển cho mục đích giáo dục dựa trên
 - Kiến thức từ Lab1_OSPF (OSPF Multi-Area implementation)
 - Kiến thức từ Lab2_ACLs (3-layer + DMZ + Micro-segmentation)
 
-**Tác giả:** [Tên giảng viên/Đơn vị]  
+**Tác giả:** Trần Thanh Nhã - Huỳnh Văn Dũng  
 **Phiên bản:** 2.0 (Cập nhật: Tháng 2/2026)
 
 ---
