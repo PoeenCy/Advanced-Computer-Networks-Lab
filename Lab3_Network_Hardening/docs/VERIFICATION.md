@@ -37,8 +37,6 @@ wget --no-check-certificate https://172.16.10.100
 - Output thành công (HTTP 200, hoặc HTML content)
 - Hoặc tcpdump showing TCP 3-way handshake complete
 
-**Điểm:** 5 điểm
-
 ---
 
 ### TC-002: Admin PC SSH vào Router R1
@@ -55,9 +53,6 @@ ssh admin@10.0.0.1
 **Minh chứng cần có:**
 - SSH login prompt hiện ra
 - Hoặc thành công đăng nhập vào VTY
-
-**Điểm:** 5 điểm
-
 ---
 
 ### TC-003: IoT gửi Syslog đến Syslog Server
@@ -77,8 +72,6 @@ tail -f /var/log/syslog | grep "Test syslog"
 **Minh chứng cần có:**
 - Log message xuất hiện trên Syslog Server
 
-**Điểm:** 5 điểm
-
 ---
 
 ### TC-004: IoT ping ra Internet
@@ -94,8 +87,6 @@ ping -c 4 8.8.8.8
 
 **Minh chứng cần có:**
 - Ping replies nhận được (0% packet loss hoặc < 10%)
-
-**Điểm:** 5 điểm
 
 ---
 
@@ -122,9 +113,6 @@ ping -c 4 10.1.1.10
 **Minh chứng cần có:**
 - Screenshot ping failed
 - Log entry từ ACL (nếu có keyword `log`)
-
-**Điểm:** 5 điểm
-
 ---
 
 ### TC-006: IoT KHÔNG ping được Management Zone
@@ -139,8 +127,6 @@ ping -c 4 10.1.2.100
 ```
 
 **Kết quả chấp nhận:** 100% packet loss
-
-**Điểm:** 10 điểm (vì đây là test case QUAN TRỌNG NHẤT!)
 
 ---
 
@@ -158,8 +144,6 @@ telnet 172.16.10.100 80
 ```
 
 **Kết quả chấp nhận:** Connection refused hoặc timeout
-
-**Điểm:** 5 điểm
 
 ---
 
@@ -179,8 +163,6 @@ smbclient //10.1.2.100/HR
 
 **Kết quả chấp nhận:** Ping timeout, SMB connection refused
 
-**Điểm:** 10 điểm
-
 ---
 
 ### TC-009: Staff PC KHÔNG SSH được vào Router
@@ -195,8 +177,6 @@ ssh admin@10.0.0.1
 ```
 
 **Kết quả chấp nhận:** "Connection refused" hoặc "Permission denied"
-
-**Điểm:** 5 điểm
 
 ---
 
@@ -215,8 +195,6 @@ nmap -p 445 10.1.2.100
 ```
 
 **Kết quả chấp nhận:** Ping timeout, nmap shows "filtered" hoặc no response
-
-**Điểm:** 5 điểm
 
 ---
 
@@ -241,8 +219,6 @@ R6# show ip route
 **Minh chứng cần có:**
 - Screenshot `show ip route` output
 
-**Điểm:** 10 điểm
-
 ---
 
 ### TC-012: OSPF Neighbors đều ở trạng thái FULL
@@ -262,8 +238,6 @@ R6# show ip ospf neighbor
 **Minh chứng cần có:**
 - Screenshot từ ít nhất 3 routers (R1, R2, R6)
 
-**Điểm:** 5 điểm
-
 ---
 
 ### TC-013: OSPF MD5 Authentication đang hoạt động
@@ -282,8 +256,6 @@ R1# show ip ospf interface | include auth
 
 **Minh chứng cần có:**
 - Screenshot `show ip ospf interface`
-
-**Điểm:** 5 điểm
 
 ---
 
@@ -323,8 +295,6 @@ R6# show ip route 10.0.0.0
 **Minh chứng cần có:**
 - Screenshot route table TRƯỚC và SAU khi shutdown R5
 - Hoặc traceroute output showing path change
-
-**Điểm:** 10 điểm
 
 ---
 
