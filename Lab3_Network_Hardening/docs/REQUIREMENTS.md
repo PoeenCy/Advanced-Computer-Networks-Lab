@@ -14,13 +14,11 @@
 
 **Mục tiêu:** Triển khai hạ tầng mạng an toàn theo thiết kế trong [TOPOLOGY.md](./TOPOLOGY.md), đáp ứng yêu cầu từ CISO trong [SCENARIO.md](./SCENARIO.md).
 
-**Điểm tối đa:** 100 điểm
-
 ---
 
-## II. PHẦN A - ĐỊNH TUYẾN OSPF MULTI-AREA (40 điểm)
+## II. PHẦN A - ĐỊNH TUYẾN OSPF MULTI-AREA 
 
-### A1. Cấu hình OSPF Cơ bản (15 điểm)
+### A1. Cấu hình OSPF Cơ bản 
 
 **Yêu cầu:**
 - [ ] Khởi tạo OSPF process trên tất cả 6 routers
@@ -44,7 +42,7 @@
 
 ---
 
-### A2. Tối ưu hóa OSPF (15 điểm)
+### A2. Tối ưu hóa OSPF 
 
 **Yêu cầu:**
 - [ ] **Network Type:** Đặt tất cả liên kết P2P (router-to-router) thành `point-to-point`
@@ -73,7 +71,7 @@
 
 ---
 
-### A3. OSPF Totally Stubby Area (10 điểm)
+### A3. OSPF Totally Stubby Area 
 
 **Yêu cầu:**
 - [ ] Cấu hình Area 30 (IoT) thành **Totally Stubby Area**
@@ -100,9 +98,9 @@
 
 ---
 
-## III. PHẦN B - EXTENDED ACLs (40 điểm)
+## III. PHẦN B - EXTENDED ACLs 
 
-### B1. ACL 110: Cô lập IoT Zone (15 điểm)
+### B1. ACL 110: Cô lập IoT Zone 
 
 **Vị trí:** Router R6, Interface eth2 (kết nối IoT Zone), Direction: **IN**
 
@@ -144,7 +142,7 @@
 
 ---
 
-### B2. ACL 120: Bảo vệ DMZ (10 điểm)
+### B2. ACL 120: Bảo vệ DMZ 
 
 **Vị trí:** Router R5, Interface eth2 (kết nối DMZ), Direction: **IN**
 
@@ -242,9 +240,9 @@
 
 ---
 
-## IV. PHẦN C - BẢO MẬT BỔ SUNG (20 điểm)
+## IV. PHẦN C - BẢO MẬT BỔ SUNG 
 
-### C1. OSPF MD5 Authentication (10 điểm)
+### C1. OSPF MD5 Authentication 
 
 **Mục tiêu:** Chống route poisoning / man-in-the-middle
 
@@ -267,7 +265,7 @@
 
 ---
 
-### C2. Password Security (5 điểm)
+### C2. Password Security 
 
 **Yêu cầu:**
 - [ ] Mã hóa passwords trong config: `service password-encryption`
@@ -280,7 +278,7 @@
 
 ---
 
-### C3. Logging & Monitoring (5 điểm)
+### C3. Logging & Monitoring 
 
 **Yêu cầu:**
 - [ ] Enable logging với keyword `log` trong các ACL quan trọng
@@ -414,10 +412,6 @@
 | - Password security | 5 | No clear-text passwords |
 | - Logging | 5 | ACL logs + timestamps |
 
-**TOTAL: 100 điểm**
-
-**PASS: ≥ 70 điểm**
-
 ---
 
 ## IX. DEADLINE & NỘP BÀI
@@ -428,12 +422,9 @@
 
 **Files cần nộp:**
 1. `topology.py` - Mininet script
-2. `configure_ospf.sh` hoặc `configure_ospf.py`
-3. `configure_acls.sh` hoặc `configure_acls.py`
+2. `configure_ospf.py`
+3. `configure_acls.py`
 4. `report.pdf` - Báo cáo đầy đủ
-5. (Optional) `demo.mp4` - Video demo
-
-**Nộp muộn:** Trừ 10 điểm/ngày (tối đa 3 ngày)
 
 ---
 
