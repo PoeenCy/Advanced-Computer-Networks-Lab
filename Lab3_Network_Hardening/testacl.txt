@@ -1,0 +1,152 @@
+============================================================
+ Lab3 Network Hardening - Huong dan test ACL
+============================================================
+
+Buoc 1: Khoi dong mang
+  sudo python3 topology.py
+
+Buoc 2: Doi OSPF hoi tu (50s) roi kiem tra ket noi co ban
+  mininet> pingall              # Mong doi: 0% dropped
+
+============================================================
+ Buoc 3: Ap dung ACL
+============================================================
+  mininet> acl
+
+============================================================
+ Buoc 4: Test ACL 110 - IoT Isolation (R6)
+============================================================
+
+# 4.1 DENY: IoT -> Management
+  camera1 ping -c 2 -W 2 10.1.2.50
+  # Mong doi: 100% packet loss (DROP)
+
+# 4.2 DENY: IoT -> Staff
+  camera1 ping -c 2 -W 2 10.1.1.10
+  # Mong doi: 100% packet loss (DROP)
+
+# 4.3 DENY: IoT -> DMZ (tru Syslog)
+  camera1 ping -c 2 -W 2 172.16.10.100
+  # Mong doi: 100% packet loss (DROP)
+
+# 4.4 PERMIT: IoT -> ICMP echo (ping ra ngoai)
+  camera1 ping -c 2 10.0.0.1
+  # Mong doi: 0% packet loss (ACCEPT)
+
+# 4.5 Kiem tra log
+  r6 dmesg | grep ACL110 | tail -5
+  # Mong doi: Thay cac dong "ACL110-DENY-MGMT", "ACL110-DENY-STAFF"
+
+# 4.6 Xem rules
+  r6 iptables -L FORWARD -n -v --line-numbers
+
+============================================================
+ Buoc 5: Test ACL 120 - DMZ Security (R5)
+============================================================
+
+# 5.1 DENY: DMZ -> Inside (chong lateral movement)
+  webserver ping -c 2 -W 2 10.1.2.50
+  # Mong doi: 100% packet loss (DROP)
+
+# 5.2 DENY: DMZ -> Staff
+  webserver ping -c 2 -W 2 10.1.1.10
+  # Mong doi: 100% packet loss (DROP)
+
+# 5.3 PERMIT: Outside -> Web Server (ICMP)
+  admin ping -c 2 172.16.10.100
+  # Mong doi: 0% packet loss (ACCEPT)
+
+# 5.4 PERMIT: Staff -> DMZ (ICMP)
+  pc1 ping -c 2 172.16.10.100
+  # Mong doi: 0% packet loss (ACCEPT - ICMP allowed)
+
+# 5.5 Kiem tra log
+  r5 dmesg | grep ACL120 | tail -5
+  # Mong doi: "ACL120-DENY-INSIDE"
+
+# 5.6 Xem rules
+  r5 iptables -L FORWARD -n -v --line-numbers
+
+============================================================
+ Buoc 6: Test ACL 130 - Staff Policy (R4)
+============================================================
+
+# 6.1 DENY: Staff -> Management
+  pc1 ping -c 2 -W 2 10.1.2.50
+  # Mong doi: 100% packet loss (DROP)
+
+# 6.2 DENY: Staff -> IoT
+  pc1 ping -c 2 -W 2 192.168.100.10
+  # Mong doi: 100% packet loss (DROP)
+
+# 6.3 PERMIT: Staff -> DMZ (ICMP echo)
+  pc1 ping -c 2 172.16.10.100
+  # Mong doi: 0% packet loss (ACCEPT)
+
+# 6.4 PERMIT: Management -> anywhere (admin full access)
+  admin ping -c 2 172.16.10.100
+  # Mong doi: 0% packet loss (ACCEPT)
+
+  admin ping -c 2 192.168.100.10
+  # Mong doi: 0% packet loss (ACCEPT)
+
+  admin ping -c 2 10.1.1.10
+  # Mong doi: 0% packet loss (ACCEPT)
+
+# 6.5 Kiem tra log
+  r4 dmesg | grep ACL130 | tail -5
+
+# 6.6 Xem rules
+  r4 iptables -L FORWARD -n -v --line-numbers
+
+============================================================
+ Buoc 7: Test ACL 140 - SSH Access Control
+============================================================
+
+# 7.1 PERMIT: Admin -> Router SSH
+  admin wget -qO- --timeout=2 http://10.0.0.1:22 2>&1 | head -1
+  # Mong doi: Ket noi duoc (SSH banner hoac connection)
+
+# 7.2 DENY: Non-admin -> Router SSH
+  pc1 wget -qO- --timeout=2 http://10.0.0.1:22 2>&1 | head -1
+  # Mong doi: Connection refused / timeout
+
+# 7.3 Xem rules
+  r1 iptables -L INPUT -n -v --line-numbers
+
+============================================================
+ Buoc 8: Xoa ACL va kiem tra lai
+============================================================
+  mininet> acl_clear
+  # Tat ca rules bi xoa
+
+  camera1 ping -c 2 10.1.2.50
+  # Mong doi: 0% packet loss (khong con ACL)
+
+  pc1 ping -c 2 10.1.2.50
+  # Mong doi: 0% packet loss
+
+============================================================
+ Buoc 9: Xem tong quan
+============================================================
+  mininet> acl_status     # Xem iptables rules hien tai
+  mininet> routes         # Xem routing tables
+  mininet> neighbors      # Xem OSPF neighbors
+
+============================================================
+ Tom tat ket qua mong doi
+============================================================
+
+ Test                        | Khong ACL | Co ACL  | ACL
+ ----------------------------|-----------|---------|--------
+ admin -> webserver          | PASS      | PASS    | Mgmt full access
+ admin -> camera1            | PASS      | PASS    | Mgmt full access
+ admin -> pc1                | PASS      | PASS    | Mgmt full access
+ pc1 -> webserver (ICMP)     | PASS      | PASS    | ACL 130 cho ICMP
+ pc1 -> admin                | PASS      | DENY    | ACL 130 chan Staff->Mgmt
+ pc1 -> camera1              | PASS      | DENY    | ACL 130 chan Staff->IoT
+ camera1 -> admin            | PASS      | DENY    | ACL 110 chan IoT->Mgmt
+ camera1 -> pc1              | PASS      | DENY    | ACL 110 chan IoT->Staff
+ camera1 -> webserver        | PASS      | DENY    | ACL 110 chan IoT->DMZ
+ webserver -> admin          | PASS      | DENY    | ACL 120 chan DMZ->Inside
+ webserver -> pc1             | PASS      | DENY    | ACL 120 chan DMZ->Inside

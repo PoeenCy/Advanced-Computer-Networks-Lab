@@ -1,0 +1,15 @@
+# 1. Them FRR repository
+curl -s https://deb.frrouting.org/frr/keys.gpg | sudo tee /usr/share/keyrings/frrouting.gpg > /dev/null
+
+# 2. Xac dinh version Ubuntu
+FRRVER="frr-stable"
+echo deb '[signed-by=/usr/share/keyrings/frrouting.gpg]' https://deb.frrouting.org/frr $(lsb_release -s -c) $FRRVER | sudo tee -a /etc/apt/sources.list.d/frr.list
+
+# 3. Cai dat
+sudo apt update
+sudo apt install frr frr-pythontools -y
+
+# 4. Kiem tra
+ls -la /usr/lib/frr/ospfd
+ls -la /usr/lib/frr/zebra
+id frr
