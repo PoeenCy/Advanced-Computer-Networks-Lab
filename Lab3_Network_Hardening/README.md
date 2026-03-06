@@ -1,4 +1,4 @@
-# ĐỒ ÁN LAB: THIẾT KẾ HẠ TẦNG MẠNG DOANH NGHIỆP AN TOÀN
+# ĐỒ ÁN LAB: TÁI THIẾT KẾ HẠ TẦNG MẠNG DOANH NGHIỆP THEO MÔ HÌNH ZERO TRUST
 
 **Tích hợp OSPF Multi-Area + Extended ACLs + Kiến trúc 3 Lớp + DMZ**
 
