@@ -87,22 +87,7 @@ Toàn bộ kết quả phải được trình bày kèm PCAP evidence. Báo cáo
 
 ## MÔ HÌNH MẠNG THAM KHẢO
 
-```
-                      [Outside / Internet]
-                              |
-                        [R1 - Core]              ← ABR: Area 0 + Area 10 + Area 20
-                       /      |      \
-              Area 20  |   Area 0    |  Area 10
-                       |             |
-                  [R2 - DMZ]    [R4 - Inside]
-                       |             |
-               [Web Server]     [Staff Zone]
-               [Mail Server]    [Management Zone]
-
-          [R1] ──── Area 0 ──── [R3 - ABR] ──── Area 30 ──── [R5 - Branch]
-                                                                     |
-                                                             [Branch Office]
-```
+![Sơ đồ Topology Mạng](topology.png)
 
 | Area | Vai trò | Routers | Subnets |
 |:---|:---|:---|:---|
