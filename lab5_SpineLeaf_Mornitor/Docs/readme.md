@@ -21,7 +21,7 @@ Mô hình thực hành bao gồm 3 phân khu chính:
 - **Tầng Nhánh Leaf (S3, S4, S5):** Kết nối trực tiếp xuống các máy chủ Server đầu cuối. Chịu trách nhiệm bảo mật Zero Trust.
 - **Gateway & Mạng Internet (S7, R1):** R1 là Router Ranh giới (Border Router) chạy cấu hình thông dịch NAT64. Bên ngoài R1 là một dải mạng giả lập Public Internet thuần IPv4.
 
-![Sơ đồ Topology Mạng Data Center](image/logic_network.png)
+![Sơ đồ Topology Mạng Data Center](../image/logic_network.png)
 *(Hình ảnh minh họa kiến trúc toàn diện của Data Center)*
 
 ---
@@ -94,7 +94,6 @@ Trước khi bắt tay vào chạy, dưới đây là "Bản đồ kho báu" gi�
 ```bash
 cd source/
 ```
-*(Lưu ý: Mọi lệnh trong phần này đều gõ khi đang đứng ở thư mục `source/`. Tuyệt đối không chạy các file trong thư mục `thamkhao` vì đó chỉ là kịch bản nháp)*
 
 ### 6.1. File Khởi Tạo Mạng Lõi: `topology.py`
 Tệp này chứa toàn bộ hệ sinh thái của Đồ án. Rất đơn giản, hãy gõ lệnh:
