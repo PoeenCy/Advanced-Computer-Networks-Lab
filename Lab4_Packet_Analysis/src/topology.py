@@ -115,7 +115,7 @@ def apply_acls(net):
     r2.cmd('iptables -A FORWARD -s 172.16.10.0/24 -d 192.168.20.0/24 -m state --state NEW -j DROP')
     
     # ------------------ KHU VỰC R4 (Cửa ngõ Inside) ------------------
-    # CHÍNH SÁCH 2: Nhân viên từ Inside truy cập DMZ CHỈ được xài Web (Port 80/443) và DNS (Port 53).
+    # CHÍNH SÁCH 2: Nhân viên từ Inside truy cập DMZ CHỈ được sài Web (Port 80/443) và DNS (Port 53).
     # Mọi gói tin ICMP (Ping) hoặc dịch vụ rác đều bị bóp nghẹt tại cổng của R4 nhằm tránh việc hack DMZ.
     r4.cmd('iptables -A FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT')
     r4.cmd('iptables -A FORWARD -d 172.16.10.0/24 -p tcp -m multiport ! --dports 80,443 -j DROP')
