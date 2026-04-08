@@ -1,0 +1,31 @@
+<mxfile host="app.diagrams.net">
+  <diagram name="Trang-1" id="SC_PryFM3uBwHtuwIuTA">
+    <mxGraphModel dx="1239" dy="694" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="ZU3A_MRPgebyyjA32EU8-2" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="Path" vertex="1">
+          <mxGeometry height="30" width="60" x="40" y="170" as="geometry" />
+        </mxCell>
+        <mxCell id="ZU3A_MRPgebyyjA32EU8-3" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="Thông lượng(Mbps)" vertex="1">
+          <mxGeometry height="30" width="110" x="40" y="210" as="geometry" />
+        </mxCell>
+        <mxCell id="ZU3A_MRPgebyyjA32EU8-4" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="web_server1" vertex="1">
+          <mxGeometry height="30" width="60" x="170" y="170" as="geometry" />
+        </mxCell>
+        <mxCell id="ZU3A_MRPgebyyjA32EU8-5" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="db_server1" vertex="1">
+          <mxGeometry height="30" width="60" x="670" y="170" as="geometry" />
+        </mxCell>
+        <mxCell id="ZU3A_MRPgebyyjA32EU8-6" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="s3" vertex="1">
+          <mxGeometry height="30" width="60" x="300" y="170" as="geometry" />
+        </mxCell>
+        <mxCell id="ZU3A_MRPgebyyjA32EU8-7" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="s1" vertex="1">
+          <mxGeometry height="30" width="60" x="400" y="170" as="geometry" />
+        </mxCell>
+        <mxCell id="ZU3A_MRPgebyyjA32EU8-8" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="s5" vertex="1">
+          <mxGeometry height="30" width="60" x="500" y="170" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
