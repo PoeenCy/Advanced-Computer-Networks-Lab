@@ -1,0 +1,41 @@
+\section*{PHỤ LỤC}
+\phantomsection\addcontentsline{toc}{section}{\numberline{} PHỤ LỤC}
+
+\subsection*{A. Mã nguồn topology.py (Trích đoạn chính)}
+\begin{lstlisting}[style=customcode, language=Python, caption={Lớp FRRouter -- Thiết bị định tuyến trên Mininet.}]
+class FRRouter(Node):
+    def config(self, **params):
+        super(FRRouter, self).config(**params)
+        self.cmd('sysctl -w net.ipv6.conf.all.forwarding=1')
+        self.cmd('sysctl -w net.ipv6.fib_multipath_hash_policy=1')
+        self.cmd('sysctl -w net.ipv6.conf.all.accept_dad=0')
+        confDir = f'/tmp/{self.name}'
+        self.cmd(f'rm -rf {confDir} && mkdir -p {confDir}')
+        # Khoi chay Zebra va OSPF6D daemon
+        self.cmd(f'/usr/lib/frr/zebra -d -f {confDir}/zebra.conf')
+        self.cmd(f'/usr/lib/frr/ospf6d -d -f {confDir}/ospf6d.conf')
+\end{lstlisting}
+
+\subsection*{B. Mã nguồn microsegment.sh (Trích đoạn QT1 + QT5)}
+\begin{lstlisting}[style=customcode, language=bash, caption={Zero Trust: Cách ly Web và Bảo vệ Database.}]
+# [QT1] Web Isolation: Chan Web1 <-> Web2
+for web in web_server1 web_server2; do
+    ip netns exec $web ip6tables -A INPUT -s fd00:10::/64 -j DROP
+done
+# [QT5] Web -> DB: ALLOW TCP 3306
+ip netns exec s5 ip6tables -A FORWARD -s fd00:10::/64 \
+    -d fd00:30::/64 -p tcp --dport 3306 -j ACCEPT
+\end{lstlisting}
+
+\subsection*{C. Mã nguồn nat\_setup.sh (Cấu hình Tayga NAT64)}
+\begin{lstlisting}[style=customcode, language=bash, caption={Cấu hình NAT64 trên Border Router R1.}]
+# Tao giao dien TUN nat64
+ip netns exec r1 tayga -c /tmp/r1_tayga/tayga.conf --mktun
+ip netns exec r1 ip link set nat64 up
+# Routing
+ip netns exec r1 ip route add 192.168.255.0/24 dev nat64
+ip netns exec r1 ip -6 route add 64:ff9b::/96 dev nat64
+# SNAT MASQUERADE
+ip netns exec r1 iptables -t nat -A POSTROUTING \
+    -s 192.168.255.0/24 -o r1-eth1 -j MASQUERADE
+\end{lstlisting}

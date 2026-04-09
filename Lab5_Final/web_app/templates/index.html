@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>IPv6 Spine-Leaf Monitor</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <header>
+    <h1><i class="fa-solid fa-server"></i> IPv6 Spine-Leaf Network Monitor</h1>
+    <div class="status-badge"><div class="pulse"></div> MONITORING ACTIVE</div>
+  </header>
+
+  <div class="tabs-nav">
+    <button class="tab-btn active" onclick="openTab('tab-diag')"><i class="fa-solid fa-microchip"></i> Diagnostics & Chart</button>
+    <button class="tab-btn" onclick="openTab('tab-topo')"><i class="fa-solid fa-project-diagram"></i> Topology Map</button>
+    <button class="tab-btn" onclick="openTab('tab-cases')"><i class="fa-solid fa-flask"></i> Run Test Cases</button>
+    <button class="tab-btn" onclick="toggleConsole()" style="margin-left: auto; background: var(--card-bg); color: #a3be8c;"><i class="fa-solid fa-terminal"></i> Toggle Console</button>
+  </div>
+
+  <div class="tab-wrapper">
+    <!-- TAB 1: Diagnostics -->
+    <div id="tab-diag" class="tab-content active" style="padding: 1.5rem;">
+    <!-- Row 1: Metrics -->
+    <div class="metrics-row">
+      <div class="metric-card blue">
+        <div class="metric-title">SPINE 1 LOAD (S1)</div>
+        <div class="metric-value">69<span class="metric-unit">%</span></div>
+        <div class="metric-unit">Active Routing (OSPF)</div>
+      </div>
+      <div class="metric-card purple">
+        <div class="metric-title">SPINE 2 LOAD (S2)</div>
+        <div class="metric-value">31<span class="metric-unit">%</span></div>
+        <div class="metric-unit">Active Routing (ECMP)</div>
+      </div>
+      <div class="metric-card green">
+        <div class="metric-title">ZERO TRUST FIREWALL</div>
+        <div class="metric-value">SECURE</div>
+        <div class="metric-unit">8 ACL Rules Enforced</div>
+      </div>
+      <div class="metric-card red">
+        <div class="metric-title">PACKET LOSS</div>
+        <div class="metric-value" id="disp-loss">0<span class="metric-unit">%</span></div>
+        <div class="metric-unit" id="disp-rtt">Latency: N/A</div>
+      </div>
+    </div>
+
+    <div class="dashboard-grid">
+      <div class="main-column">
+        <div class="panel chart-panel">
+          <div class="panel-header" style="justify-content: space-between;">
+              <div><i class="fa-solid fa-chart-line" style="color: var(--secondary);"></i> Realtime Traffic</div>
+              <div style="display: flex; gap: 0.5rem;">
+                  <select id="chart-src" style="padding: 0.2rem; font-size: 0.8rem; background: rgba(0,0,0,0.3); color: white; border: 1px solid var(--border); border-radius: 4px;">
+                      {% for node in nodes %}<option value="{{ node }}">{{ node }}</option>{% endfor %}
+                  </select>
+                  <select id="chart-dst" style="padding: 0.2rem; font-size: 0.8rem; background: rgba(0,0,0,0.3); color: white; border: 1px solid var(--border); border-radius: 4px;">
+                      {% for node in nodes %}<option value="{{ node }}" {% if node == 'db_server1' %}selected{% endif %}>{{ node }}</option>{% endfor %}
+                  </select>
+              </div>
+          </div>
+          <div style="padding: 1rem; flex: 1; position: relative;">
+              <canvas id="realtimeChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="side-column">
+        <div class="panel actions-panel">
+        <div class="action-section">
+        <h3><i class="fa-solid fa-satellite-dish"></i> Live Diagnostics</h3>
+        <select id="src-node" class="form-control">
+          {% for node in nodes %}<option value="{{ node }}">{{ node }}</option>{% endfor %}
+        </select>
+        <select id="dst-node" class="form-control">
+          {% for node in nodes %}<option value="{{ node }}" {% if node == 'db_server1' %}selected{% endif %}>{{ node }}</option>{% endfor %}
+        </select>
+        
+        <button class="btn btn-primary" onclick="runDiagnostic('ping')"><i class="fa-solid fa-bolt"></i> Ping RTT</button>
+        <button class="btn btn-primary" onclick="runDiagnostic('loss')"><i class="fa-solid fa-ban"></i> Test Packet Loss</button>
+        <button class="btn btn-primary" onclick="runDiagnostic('path')"><i class="fa-solid fa-route"></i> Trace Hop Path</button>
+      </div>
+      </div>
+    </div>
+  </div>
+  </div>
+
+  <!-- TAB 2: Topology Map -->
+    <div id="tab-topo" class="tab-content" style="padding: 1.5rem;">
+      <div class="panel topology-panel" style="flex: 1; display: flex; flex-direction: column;">
+        <div class="panel-header"><i class="fa-solid fa-project-diagram" style="color: var(--primary);"></i> Interactive Topology Map</div>
+        <div class="topology-container" id="network-graph" style="flex: 1; width: 100%; min-height: unset;"></div>
+      </div>
+    </div>
+
+    <!-- TAB 3: Test Cases -->
+    <div id="tab-cases" class="tab-content" style="align-items: center; padding-top: 3rem;">
+      <div class="panel" style="padding: 3rem; overflow-y: auto; max-width: 1200px; width: 100%; margin: 0 auto;">
+        <h3 style="margin-bottom: 2rem; color: var(--text-muted); text-align: center; text-transform: uppercase; letter-spacing: 1px; font-size: 1.4rem;"><i class="fa-solid fa-flask" style="color: var(--primary);"></i> Execute Data Center Simulators</h3>
+        <div class="cases-grid">
+          <div class="case-card danger" onclick="runCase(1)">
+            <i class="fa-solid fa-plug-circle-xmark"></i>
+            <h4>Case 1: Spine 1 S/W Failure</h4>
+            <p>Kill OSPF software process</p>
+          </div>
+          <div class="case-card danger" onclick="runCase(2)">
+            <i class="fa-solid fa-scissors"></i>
+            <h4>Case 2: Physical Cable Cut</h4>
+            <p>Simulate L1 interface hardware node down</p>
+          </div>
+          <div class="case-card success" onclick="runCase(3)">
+            <i class="fa-solid fa-shield-halved"></i>
+            <h4>Case 3: Zero Trust Policy</h4>
+            <p>Run full IP tables ACL matrix tests</p>
+          </div>
+          <div class="case-card success" onclick="runCase(4)">
+            <i class="fa-solid fa-scale-balanced"></i>
+            <h4>Case 4: ECMP Balancing</h4>
+            <p>Compare Single vs Multi-flow load sharing</p>
+          </div>
+          <div class="case-card primary" onclick="runCase(5)">
+            <i class="fa-solid fa-street-view"></i>
+            <h4>Case 5: Trace Hop Paths</h4>
+            <p>View hop-by-hop visual execution metrics</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div> <!-- END TAB WRAPPER -->
+
+  <div class="global-terminal">
+    <div class="panel-header" style="background: rgba(0,0,0,0.5);"><i class="fa-solid fa-terminal" style="color: #a3be8c;"></i> System Console</div>
+    <div id="console-box">
+      <div style="color: #64748b;">Waiting for input...</div>
+    </div>
+  </div>
+
+  <!-- Image Modal -->
+  <div class="modal" id="image-modal">
+    <span class="close-modal" onclick="closeModal()">&times;</span>
+    <div class="modal-content">
+      <img id="modal-img" src="" alt="Chart Result">
+    </div>
+  </div>
+
+  <script src="/static/main.js"></script>
+</body>
+</html>

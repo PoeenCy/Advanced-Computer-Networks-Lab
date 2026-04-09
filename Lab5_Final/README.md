@@ -29,16 +29,14 @@ Dự án được vận hành bởi 6 tệp tin chính yếu sau đây. Mỗi t�
 Dùng để giả lập sự cố thiên tai/đứt cáp quang bằng tay (Kích hoạt qua lệnh `failtest`).
 - **Nhiệm vụ:** Chủ động đánh sập (`down`) toàn bộ các Link kết nối từ hạ tầng Leaf (Lớp dưới) lên Spine S1. Kịch bản này ép mạng sập 1 bên để đánh giá tốc độ hội tụ và phục hồi tuyến tính cực nhanh của giao thức định tuyến OSPFv3 thông qua đường cáp tời Spine S2 dự phòng.
 
-### 5. `tool.py` - Hệ Thống Nám Trắc Hình Ảnh (Diagnostic & Analytics GUI)
-Tệp giao diện trực quan Tkinter dùng song song với Mininet. Là "con mắt thần" để Giám khảo nhìn thấy chất lượng thực sự của sơ đồ lớp.
+### 5. `web_app/app.py` - Hệ Thống Dashboard Nền Web (Diagnostic & Analytics Dashboard)
+Ứng dụng Web hiện đại thay thế cho giao diện Tkinter cũ, điều khiển mạng qua REST API và Flask. Là "con mắt thần" để Giám khảo nhìn thấy chất lượng thực sự của sơ đồ một cách chuyên nghiệp.
 - **Nhiệm vụ:** 
-  - **Tool Tương Tác:** Chỉ định Host đích/nguồn để test RTT Ping, Rớt gói Loss%, và Trace lộ trình đa luồng theo thời gian thực.
-  - **Academic Chart Reports:** Tích hợp 5 chức năng sinh biểu đồ Báo cáo học thuật cực mạnh. 
-    + *(Case 1+2)*: Đo vẽ đồ thị Thời gian hội tụ OSPF khi mạng sập/rút cáp bằng dữ liệu `Bytes Raw` thật.
-    + *(Case 3)*: Vẽ Ma Trận Heatmap phơi bày lỗ hổng Bảo Mật (Zero Trust ACL) đa Port (80, 3306, 53) bằng thuật toán quét song song (Threading).
-    + *(Case 4+5)*: Bơm dữ liệu lớn (`iperf -P 8`) để kích hoạt cơ chế chia tải chẻ ngã ba OSPF ECMP, và vẽ bảng đồ thị băng thông hiển thị tường tận sức gánh của cả 2 Spine.
-  - Đặc biệt: Tự động trích xuất mọi số liệu từ Nhân Linux (Counter) ra các File `.csv` đi kèm ảnh, đảm bảo độ trong sạch 100% của báo cáo khoa học.
-- **Cách dùng:** Mở Terminal thứ hai (ngoài Mininet) và chạy: `sudo python3 tool.py`
+  - **Live Diagnostics:** Chỉ định Host đích/nguồn để test RTT Ping, Rớt gói Loss%, và Trace lộ trình đa luồng theo thời gian thực (Trình chiếu Console ở Footer).
+  - **Topology Graph Map:** Sơ đồ mạng tương tác, kéo thả sinh động bằng công nghệ Vis.js.
+  - **Academic Automations:** Tích hợp 5 chức năng sinh biểu đồ Báo cáo học thuật cực mạnh. Trực tiếp chạy Automation mô phỏng Cắt Cáp, Lỗi Tiến Trình và vẽ Hình Ảnh trực quan trên trình duyệt.
+  - Đặc biệt: Tích hợp Chart.js để vẽ **Biểu đồ băng thông Realtime**, theo dõi quá trình biến đổi Byte Transfer trong hệ thống mạng khi thử nghiệm tắc nghẽn (ECMP).
+- **Cách dùng:** Mở Terminal thứ hai (ngoài Mininet) và chạy: `sudo python3 web_app/app.py` (sau đó truy cập `http://localhost:5000`)
 
 ### 6. `draw_topology.py` - Họa Sĩ Thiết Kế
 Tệp phụ trợ dùng thư viện `NetworkX` và `Matplotlib` để phác thảo hình dáng tổng quan của Topology ra định dạng `.png`.
@@ -47,7 +45,12 @@ Tệp phụ trợ dùng thư viện `NetworkX` và `Matplotlib` để phác th�
 ---
 ## 🎯 Hướng dẫn Chạy Thử (Workflow)
 
-1. **Khởi tạo Ảo Hóa:** `sudo python3 topology.py`
+### Chuẩn bị môi trường
+- Cài đặt Mininet và FRR (Theo Lab 1-4).
+- Cài đặt Flask server cho Backend Web: `sudo apt install python3-flask python3-pip`
+
+### 4 Bước Khởi Chạy
+1. **Khởi tạo Ảo Hóa mạng ở Background:** Mở Terminal, trỏ vào thư mục project và chạy `sudo python3 source/topology.py`
 2. **Kích hoạt Dịch Vụ Core:** Ở giao diện `mininet>`, gõ `nat` và `acl` để lên đồ Firewall và Internet.
-3. **Mở Giao Diện Analyzer:** Mở 1 cửa sổ Ubuntu mới (nhấn Ctrl+Alt+T), gõ `cd /d/download/MMTNC_FINAL/source` rồi chạy tiếp `sudo python3 tool.py`.
-4. **Trích Xuất Dữ Liệu:** Click vào các nút Case 1..5 trên giao diện Tool để sinh ảnh Biểu đồ (`.png`) và Sheet Số liệu (`.csv`) xuất cực đẹp tại đường dẫn `/logs/`.
+3. **Mở Giao Diện Web Analyzer:** Giữ nguyên Terminal 1, mở 1 cửa sổ Terminal mới thứ hai (nhấn Ctrl+Alt+T), trỏ vào thư mục project và chạy `sudo python3 web_app/app.py`.
+4. **Vận hành trên Browser:** Mở trình duyệt Web (Chrome/Firefox/Edge), truy cập địa chỉ `http://127.0.0.1:5000` hoặc `http://localhost:5000`. Click vào các Tab để ping, monitor lưu lượng realtime hoặc bấm Nút Case mô phỏng. Dữ liệu sẽ xuất tại `/logs/`.

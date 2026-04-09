@@ -1,0 +1,168 @@
+\section{CHUYỂN ĐỔI GIAO THỨC IPv4-IPv6 VỚI NAT64}\label{sec:nat64}
+
+Chương này trình bày bài toán tương thích ngược giữa hai phiên bản giao thức Internet trong giai đoạn chuyển đổi, cơ chế hoạt động của công nghệ NAT64 và quá trình thực nghiệm triển khai dịch vụ biên dịch Tayga trên Border Router R1 để kết nối mạng lõi Pure IPv6 với hạ tầng Internet IPv4 bên ngoài.
+
+\subsection{Bài toán Tương thích Ngược IPv6-IPv4}
+
+\subsubsection{Thách thức trong Giai đoạn Chuyển đổi}
+
+Mặc dù kiến trúc Leaf-Spine Pure IPv6 mang lại nhiều lợi thế về không gian địa chỉ (128-bit, lý thuyết hỗ trợ $3,4 \times 10^{38}$ thiết bị) và hiệu năng định tuyến, một thách thức lớn là phần lớn Internet hiện tại vẫn vận hành trên IPv4. Theo thống kê của Google (2024), tỷ lệ truy cập IPv6 toàn cầu mới đạt khoảng 45\%, nghĩa là hơn một nửa nội dung Internet vẫn chỉ khả dụng qua IPv4.
+
+Trong hệ thống thực nghiệm, các máy chủ nội bộ (Web, DNS, Database) hoạt động \textbf{hoàn toàn trên IPv6} (ví dụ: \texttt{fd00:10::1}). Chúng không có bất kỳ địa chỉ IPv4 nào và không thể trực tiếp giao tiếp với:
+\begin{itemize}
+    \item \texttt{internet} (8.8.8.8) — mô phỏng máy chủ DNS công cộng.
+    \item \texttt{serverhcm} (203.162.1.1) — mô phỏng máy chủ tại TP.HCM.
+\end{itemize}
+
+\subsubsection{Các Phương pháp Chuyển đổi IPv6-IPv4}
+
+Hiện tại có ba nhóm phương pháp chính để giải quyết bài toán tương thích:
+
+\begin{table}[H]
+    \centering
+    \caption{So sánh các phương pháp chuyển đổi IPv6-IPv4.}
+    \label{tab:transition_methods}
+    \begin{tabular}{|p{2.5cm}|p{4cm}|p{3.5cm}|p{3.5cm}|}
+        \hline
+        \textbf{Phương pháp} & \textbf{Nguyên lý} & \textbf{Ưu điểm} & \textbf{Nhược điểm} \\
+        \hline
+        Dual-Stack & Chạy đồng thời IPv4 + IPv6 trên mọi thiết bị & Tương thích tối đa & Tốn kém, phức tạp quản trị \\
+        \hline
+        Tunneling (6in4, 6to4) & Đóng gói IPv6 trong IPv4 hoặc ngược lại & Đơn giản triển khai & Tăng overhead header \\
+        \hline
+        \textbf{NAT64} & Biên dịch header IPv6 $\leftrightarrow$ IPv4 tại gateway & Trong suốt với ứng dụng & Cần DNS64 hoặc ánh xạ tĩnh \\
+        \hline
+    \end{tabular}
+\end{table}
+
+Hệ thống thực nghiệm chọn phương pháp \textbf{NAT64} vì nó cho phép mạng nội bộ duy trì Pure IPv6 mà không cần gán thêm IPv4 cho bất kỳ máy chủ nào.
+
+\subsection{Cơ chế Hoạt động của NAT64}
+
+\subsubsection{Nguyên lý Biên dịch (RFC 6146)}
+
+NAT64 hoạt động tại Border Router, thực hiện biên dịch trong suốt giữa IPv6 và IPv4 dựa trên một prefix đặc biệt: \texttt{64:ff9b::/96}. Khi máy chủ IPv6 gửi gói tin đến địa chỉ thuộc prefix này, NAT64 gateway sẽ tách lấy 32 bit cuối và coi đó là địa chỉ IPv4 đích.
+
+Ví dụ cụ thể: Khi \texttt{web\_server1} (fd00:10::1) muốn truy cập Google DNS (8.8.8.8):
+\begin{enumerate}
+    \item Ứng dụng gửi gói tin IPv6 đến ``\texttt{64:ff9b::808:808}'' (8.8.8.8 biểu diễn trong IPv6).
+    \item Gói tin đi theo tuyến OSPF mặc định \texttt{::/0} đến R1.
+    \item R1 nhận gói, tách 32 bit cuối (\texttt{0x08080808} = 8.8.8.8).
+    \item R1 tạo gói IPv4 mới: nguồn = 192.168.255.11 (ánh xạ tĩnh), đích = 8.8.8.8.
+    \item SNAT MASQUERADE đổi nguồn thành IP công cộng của R1 (8.8.8.254) trước khi gửi ra.
+    \item Gói phản hồi đi ngược lại qua quá trình biên dịch ngược.
+\end{enumerate}
+
+\subsubsection{Bảng Ánh xạ Tĩnh (Static Mapping)}
+
+Trong hệ thống thực nghiệm, mỗi máy chủ IPv6 nội bộ được gán một IPv4 cố định trong dải \texttt{192.168.255.0/24} qua tệp cấu hình Tayga:
+
+\begin{table}[H]
+    \centering
+    \caption{Bảng ánh xạ tĩnh NAT64 giữa IPv6 nội bộ và IPv4 ảo.}
+    \label{tab:nat64_mapping}
+    \begin{tabular}{|l|l|l|}
+        \hline
+        \textbf{Máy chủ} & \textbf{IPv6 nội bộ} & \textbf{IPv4 ảo (NAT64)} \\
+        \hline
+        web\_server1 & fd00:10::1 & 192.168.255.11 \\
+        \hline
+        web\_server2 & fd00:10::2 & 192.168.255.12 \\
+        \hline
+        dns\_server1 & fd00:20::1 & 192.168.255.21 \\
+        \hline
+        dns\_server2 & fd00:20::2 & 192.168.255.22 \\
+        \hline
+        db\_server1 & fd00:30::1 & 192.168.255.31 \\
+        \hline
+        db\_server2 & fd00:30::2 & 192.168.255.32 \\
+        \hline
+    \end{tabular}
+\end{table}
+
+\subsection{Triển khai Tayga NAT64 trên Border Router R1}
+
+\subsubsection{Tổng quan về Tayga}
+
+Tayga là một triển khai NAT64 mã nguồn mở, hoạt động ở userspace (không cần module kernel đặc biệt). Tayga tạo một giao diện TUN/TAP ảo (\texttt{nat64}) làm điểm biên dịch giữa hai ngăn xếp giao thức.
+
+\subsubsection{Quy trình Cấu hình Tự động}
+
+Toàn bộ quá trình cấu hình NAT64 được tự động hóa qua kịch bản \texttt{nat\_setup.sh}, gồm 6 bước:
+
+\begin{lstlisting}[style=customcode, language=bash, caption={Kịch bản cấu hình NAT64 Tayga trên R1 (trích đoạn).}, label=lst:nat64_setup]
+IP_NETNS="ip netns exec r1"
+
+# Buoc 1: Tao file cau hinh Tayga
+cat <<EOF > /tmp/r1_tayga/tayga.conf
+tun-device nat64
+ipv4-addr 192.168.255.1
+prefix 64:ff9b::/96
+dynamic-pool 192.168.255.128/25
+map 192.168.255.11 fd00:10::1
+map 192.168.255.12 fd00:10::2
+map 192.168.255.21 fd00:20::1
+map 192.168.255.22 fd00:20::2
+map 192.168.255.31 fd00:30::1
+map 192.168.255.32 fd00:30::2
+EOF
+
+# Buoc 2: Tao giao dien TUN va khoi dong daemon
+$IP_NETNS tayga -c /tmp/r1_tayga/tayga.conf --mktun
+$IP_NETNS ip link set nat64 up
+$IP_NETNS tayga -c /tmp/r1_tayga/tayga.conf
+
+# Buoc 3: Dinh tuyen cho tunnel
+$IP_NETNS ip addr add 192.168.255.1 dev nat64
+$IP_NETNS ip route add 192.168.255.0/24 dev nat64
+$IP_NETNS ip -6 route add 64:ff9b::/96 dev nat64
+
+# Buoc 4: SNAT MASQUERADE ra Internet
+$IP_NETNS iptables -t nat -A POSTROUTING \
+    -s 192.168.255.0/24 -o r1-eth1 -j MASQUERADE
+$IP_NETNS iptables -t nat -A POSTROUTING \
+    -s 192.168.255.0/24 -o r1-eth2 -j MASQUERADE
+\end{lstlisting}
+
+\subsubsection{Phân tích Luồng Gói tin NAT64}
+
+Quá trình biên dịch một gói tin từ Web Server ra Internet được mô tả chi tiết:
+
+\begin{enumerate}
+    \item \textbf{Máy chủ gửi gói IPv6:} \texttt{web\_server1} (fd00:10::1) gửi gói tin đến \texttt{64:ff9b::808:808} (ánh xạ của 8.8.8.8).
+    \item \textbf{Định tuyến OSPF:} Gói tin đi theo default route \texttt{::/0} qua Leaf S3 $\rightarrow$ Spine $\rightarrow$ Core S7 $\rightarrow$ R1.
+    \item \textbf{Tayga nhận gói:} R1 tra bảng route, phát hiện \texttt{64:ff9b::/96} trỏ vào \texttt{nat64} device.
+    \item \textbf{Biên dịch IPv6 $\rightarrow$ IPv4:} Tayga tách 32-bit cuối (0x08080808 = 8.8.8.8), tạo gói IPv4 với src=192.168.255.11, dst=8.8.8.8.
+    \item \textbf{SNAT (Source NAT):} \texttt{iptables MASQUERADE} đổi src thành IP công cộng của R1 (8.8.8.254).
+    \item \textbf{Gửi ra Internet:} Gói IPv4 rời R1 qua giao diện \texttt{r1-eth2} đến \texttt{internet} (8.8.8.8).
+\end{enumerate}
+
+Quá trình phản hồi diễn ra ngược lại: gói IPv4 đến R1, DNAT ngược, Tayga biên dịch IPv4 $\rightarrow$ IPv6, rồi OSPF định tuyến về Web Server.
+
+\subsection{Hỗ trợ Ping Ngược từ Internet vào Mạng IPv6}
+
+Một tính năng đặc biệt của hệ thống là khả năng cho phép các host IPv4 bên ngoài (internet, serverhcm) khởi tạo kết nối vào mạng IPv6 nội bộ. Điều này được thực hiện thông qua:
+
+\begin{enumerate}
+    \item \textbf{Định tuyến tĩnh trên host IPv4:} \texttt{ip route add 192.168.255.0/24 via 203.162.1.254} — hướng lưu lượng đến dải ánh xạ NAT64 qua R1.
+    \item \textbf{Tayga ánh xạ ngược:} Khi nhận gói IPv4 đến 192.168.255.11, Tayga tra bảng ánh xạ tĩnh, biên dịch thành gói IPv6 đến fd00:10::1 và chuyển tiếp vào mạng nội bộ.
+    \item \textbf{CLI hỗ trợ:} Lệnh \texttt{internet ping web\_server1} trong Mininet tự động dịch hostname thành 192.168.255.11 thông qua lớp \texttt{TechVerseCLI} tùy biến.
+\end{enumerate}
+
+\subsection{Cấu hình Redistribute Default Route qua OSPFv3}
+
+Một yếu tố then chốt để NAT64 hoạt động là các máy chủ nội bộ phải biết cách gửi gói tin đến R1. Điều này được thực hiện bằng cách R1 quảng bá tuyến mặc định \texttt{::/0} qua OSPFv3:
+
+\begin{lstlisting}[style=customcode, language=bash, caption={R1 lan tỏa default route xuống toàn bộ Spine-Leaf.}]
+# Cau hinh OSPFv3 tren R1
+router ospf6
+  redistribute static
+  redistribute kernel
+  default-information originate always
+\end{lstlisting}
+
+Tham số \texttt{always} đảm bảo R1 luôn gửi default route ngay cả khi bản thân R1 chưa học được tuyến mặc định từ upstream. Nhờ đó, toàn bộ Spine-Leaf tự động cài tuyến \texttt{::/0 via R1}, mọi gói tin đi ra Internet đều được chuyển đến R1 để biên dịch NAT64.
+
+\subsection{Tổng kết Chương}
+
+NAT64 với Tayga cung cấp giải pháp biên dịch trong suốt, cho phép mạng lõi Pure IPv6 giao tiếp với Internet IPv4 mà không cần triển khai Dual-Stack trên toàn bộ hạ tầng. Kết hợp với OSPFv3 redistribute default route, hệ thống đạt được khả năng tương thích ngược hoàn chỉnh chỉ với một điểm biên dịch duy nhất (R1), giảm thiểu độ phức tạp và bề mặt tấn công.

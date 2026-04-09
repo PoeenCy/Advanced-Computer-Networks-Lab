@@ -1,0 +1,148 @@
+\section{BẢO MẬT ZERO TRUST VÀ MICRO-SEGMENTATION}\label{sec:zero_trust}
+
+Chương này trình bày chi tiết triết lý bảo mật Zero Trust và quá trình triển khai hệ thống tường lửa vi mô (Micro-segmentation) ở mức độ ``tế bào'' trên kiến trúc Leaf-Spine Pure IPv6, sử dụng \texttt{ip6tables} để áp dụng các chính sách kiểm soát truy cập (ACL) nghiêm ngặt nhằm bảo vệ từng phân vùng máy chủ.
+
+\subsection{Triết lý Zero Trust trong Trung tâm Dữ liệu}
+
+\subsubsection{Nguyên tắc Cốt lõi}
+
+Mô hình Zero Trust, được NIST (National Institute of Standards and Technology) chuẩn hóa trong SP 800-207, đặt ra nguyên tắc nền tảng: ``\textit{Never Trust, Always Verify}'' — không tin cậy bất kỳ thực thể nào, dù bên trong hay bên ngoài ranh giới mạng. Áp dụng cụ thể vào trung tâm dữ liệu, triết lý này đòi hỏi:
+
+\begin{enumerate}
+    \item \textbf{Xác minh liên tục (Continuous Verification):} Mọi phiên kết nối phải được kiểm tra tính hợp lệ tại mỗi điểm trung chuyển.
+    \item \textbf{Đặc quyền tối thiểu (Least Privilege):} Chỉ mở đúng các cổng dịch vụ cần thiết cho hoạt động nghiệp vụ, chặn mặc định (Default Deny) mọi giao thông còn lại.
+    \item \textbf{Giả định bị xâm nhập (Assume Breach):} Thiết kế hệ thống sao cho ngay cả khi một phân vùng bị thỏa hiệp, kẻ tấn công không thể di chuyển ngang (Lateral Movement) sang các phân vùng khác.
+\end{enumerate}
+
+\subsubsection{Tại sao Cần Micro-segmentation thay vì Firewall Truyền thống?}
+
+Trong mô hình bảo mật truyền thống (Perimeter-based Security), tường lửa chỉ được đặt tại biên mạng, tạo ra hai vùng: ``Tin cậy'' (bên trong) và ``Không tin cậy'' (bên ngoài). Mô hình này thất bại hoàn toàn khi kẻ tấn công đã xâm nhập vào bên trong — chúng có thể di chuyển tự do giữa các máy chủ mà không gặp bất kỳ rào cản nào.
+
+Micro-segmentation giải quyết vấn đề này bằng cách chia nhỏ mạng thành các ``tế bào'' (micro-segment), mỗi tế bào chỉ chứa một nhóm chức năng đồng nhất (ví dụ: chỉ Web Server, chỉ Database). Ranh giới giữa các tế bào được quản lý bởi các quy tắc ACL chặt chẽ.
+
+\subsection{Thiết kế 8 Quy tắc Chính sách Zero Trust}
+
+Hệ thống phân chia 8 máy chủ thành 3 phân vùng chức năng (Web Tier, DNS Tier, Database Tier) và 1 vùng ngoại biên (Internet), áp dụng 8 quy tắc chính sách chi tiết:
+
+\begin{table}[H]
+    \centering
+    \caption{Ma trận 8 quy tắc chính sách Zero Trust Micro-segmentation.}
+    \label{tab:acl_policies}
+    \begin{tabular}{|c|p{4.5cm}|c|p{4.5cm}|}
+        \hline
+        \textbf{QT} & \textbf{Luồng giao tiếp} & \textbf{Hành động} & \textbf{Mục đích bảo mật} \\
+        \hline
+        QT1 & Web1 $\leftrightarrow$ Web2 & \textcolor{red}{\textbf{DENY}} & Chống lây lan mã độc ngang (Lateral Movement) \\
+        \hline
+        QT2 & Internet $\rightarrow$ Web (TCP 80, 443) & \textcolor{green!60!black}{\textbf{ALLOW}} & Cho phép dịch vụ HTTP/HTTPS công cộng \\
+        \hline
+        QT3 & Web $\rightarrow$ Internet & \textcolor{red}{\textbf{DENY}} & Chỉ cho phản hồi (ESTABLISHED), chặn khởi tạo (NEW) \\
+        \hline
+        QT4 & DB1 $\leftrightarrow$ DB2 & \textcolor{green!60!black}{\textbf{ALLOW}} & Cluster Replication/Synchronization \\
+        \hline
+        QT5 & Web $\rightarrow$ DB (TCP 3306) & \textcolor{green!60!black}{\textbf{ALLOW}} & Truy vấn cơ sở dữ liệu MySQL \\
+        \hline
+        QT6 & Mọi nguồn khác $\rightarrow$ DB & \textcolor{red}{\textbf{DENY}} & Bảo vệ lõi dữ liệu tuyệt đối \\
+        \hline
+        QT7 & Internal $\rightarrow$ DNS (UDP/TCP 53) & \textcolor{green!60!black}{\textbf{ALLOW}} & Phân giải tên miền nội bộ \\
+        \hline
+        QT8 & DNS $\rightarrow$ Internet (UDP 53) & \textcolor{green!60!black}{\textbf{ALLOW}} & Truy vấn Root DNS bên ngoài \\
+        \hline
+    \end{tabular}
+\end{table}
+
+\subsection{Kiến trúc Tường lửa Hai Tầng}
+
+Điểm đặc biệt của hệ thống là việc triển khai ACL trên \textbf{hai tầng phòng thủ} đồng thời, tạo thành lớp bảo vệ theo chiều sâu (Defense-in-Depth):
+
+\subsubsection{Tầng 1: Leaf Router Firewall (Network Level)}
+
+Trên mỗi Leaf Switch (S3, S4, S5), chuỗi \texttt{FORWARD} của \texttt{ip6tables} được cấu hình để kiểm soát mọi luồng lưu lượng đi qua (transit traffic). Đây là lớp phòng thủ đầu tiên, hoạt động ở cấp mạng.
+
+Trước hết, giao thức NDP (Neighbor Discovery Protocol) — bắt buộc cho hoạt động IPv6 — được cho phép bằng cách ACCEPT các loại ICMPv6 type 133 (Router Solicitation), 134 (Router Advertisement), 135 (Neighbor Solicitation) và 136 (Neighbor Advertisement). Sau đó, chỉ các luồng được phép theo chính sách mới được thông qua, mọi thứ còn lại bị DROP và ghi log.
+
+\begin{lstlisting}[style=customcode, language=bash, caption={Cấu hình Leaf S5 — Bảo vệ lõi Database.}, label=lst:leaf_s5]
+# NDP bat buoc cho IPv6
+for type in 133 134 135 136; do
+    ip netns exec s5 ip6tables -A FORWARD \
+        -p ipv6-icmp --icmpv6-type $type -j ACCEPT
+done
+# [QT5] Web -> DB: CHI ALLOW TCP 3306 (MySQL)
+ip netns exec s5 ip6tables -A FORWARD -s fd00:10::/64 \
+    -d fd00:30::/64 -p tcp --dport 3306 -j ACCEPT
+ip netns exec s5 ip6tables -A FORWARD -s fd00:30::/64 \
+    -d fd00:10::/64 -m state --state ESTABLISHED -j ACCEPT
+# [QT6] DEFAULT DENY: Moi thu con lai bi chan va ghi log
+ip netns exec s5 ip6tables -A FORWARD \
+    -j LOG --log-prefix "ZT-S5-DB-DENY: "
+ip netns exec s5 ip6tables -A FORWARD -j DROP
+\end{lstlisting}
+
+\subsubsection{Tầng 2: Host Firewall (VM Level)}
+
+Trên từng máy chủ đầu cuối, chuỗi \texttt{INPUT} của \texttt{ip6tables} được cấu hình để tạo lớp phòng thủ thứ hai tại chính máy chủ. Đặc biệt quan trọng là QT1 (Web Isolation):
+
+\begin{lstlisting}[style=customcode, language=bash, caption={QT1 — Cách ly ngang Web Server chống Lateral Movement.}, label=lst:web_isolation]
+for web in web_server1 web_server2; do
+    # Cho phep NDP
+    for type in 133 134 135 136; do
+        ip netns exec $web ip6tables -A INPUT \
+            -p ipv6-icmp --icmpv6-type $type -j ACCEPT
+    done
+    # Cho phep Loopback va ket noi da thiet lap
+    ip netns exec $web ip6tables -A INPUT -i lo -j ACCEPT
+    ip netns exec $web ip6tables -A INPUT \
+        -m state --state ESTABLISHED -j ACCEPT
+    # CHAN: Moi traffic tu cung Subnet Web (khong phai loopback)
+    ip netns exec $web ip6tables -A INPUT -s fd00:10::/64 \
+        -j LOG --log-prefix "ZT-WEB-ISOLATE: "
+    ip netns exec $web ip6tables -A INPUT -s fd00:10::/64 -j DROP
+done
+\end{lstlisting}
+
+Ý nghĩa bảo mật: Ngay cả khi kẻ tấn công chiếm được \texttt{web\_server1}, chúng \textbf{không thể ping, SSH hay lan truyền mã độc} sang \texttt{web\_server2} vì chuỗi INPUT trên web\_server2 chặn mọi gói tin từ subnet \texttt{fd00:10::/64}. Đây là minh họa điển hình cho nguyên tắc ``Assume Breach'' của Zero Trust.
+
+\subsubsection{Bảo vệ Database Server — Lõi dữ liệu}
+
+Database là tài sản quý giá nhất, được bảo vệ bởi cả hai tầng:
+
+\begin{lstlisting}[style=customcode, language=bash, caption={Bảo vệ Database Server ở cấp Host (QT4 + QT5 + QT6).}, label=lst:db_protect]
+for db in db_server1 db_server2; do
+    # NDP bat buoc
+    for type in 133 134 135 136; do
+        ip netns exec $db ip6tables -A INPUT \
+            -p ipv6-icmp --icmpv6-type $type -j ACCEPT
+    done
+    ip netns exec $db ip6tables -A INPUT -i lo -j ACCEPT
+    # [QT4] Cluster: DB1 <-> DB2 ALLOW (Replication)
+    ip netns exec $db ip6tables -A INPUT \
+        -s fd00:30::/64 -j ACCEPT
+    # [QT5] ONLY Web -> DB via TCP 3306
+    ip netns exec $db ip6tables -A INPUT -s fd00:10::/64 \
+        -p tcp --dport 3306 -j ACCEPT
+    # Cho phep phan hoi ket noi da thiet lap
+    ip netns exec $db ip6tables -A INPUT \
+        -m state --state ESTABLISHED -j ACCEPT
+    # [QT6] STRICT DENY: Tat ca con lai
+    ip netns exec $db ip6tables -A INPUT \
+        -j LOG --log-prefix "ZT-DB-HOST-DENY: "
+    ip netns exec $db ip6tables -A INPUT -j DROP
+done
+\end{lstlisting}
+
+Với cấu hình này, Database Server chỉ chấp nhận chính xác 3 loại kết nối: (1) NDP để hoạt động IPv6, (2) Traffic từ DB khác cho Cluster, (3) TCP 3306 từ Web Server. Mọi thứ khác — bao gồm Ping, SSH, HTTP, DNS — đều bị từ chối tuyệt đối.
+
+\subsection{Lưu ý Đặc biệt khi Triển khai ACL trên IPv6}
+
+Triển khai Zero Trust trên IPv6 phức tạp hơn IPv4 do IPv6 phụ thuộc hoàn toàn vào ICMPv6 cho các chức năng cơ bản. Nếu chặn nhầm ICMPv6 type 135/136 (Neighbor Solicitation/Advertisement), toàn bộ giao tiếp mạng sẽ bị tê liệt vì các thiết bị không thể phân giải địa chỉ MAC (tương đương ARP trong IPv4).
+
+Do đó, quy tắc đầu tiên trong mọi chuỗi \texttt{FORWARD} và \texttt{INPUT} luôn phải là:
+\begin{lstlisting}[style=customcode, language=bash, caption={NDP — Quy tắc bắt buộc đầu tiên trong mọi chuỗi ip6tables.}]
+for type in 133 134 135 136; do
+    ip6tables -A INPUT -p ipv6-icmp --icmpv6-type $type -j ACCEPT
+done
+\end{lstlisting}
+
+\subsection{Tổng kết Chương}
+
+Hệ thống Micro-segmentation Zero Trust đã triển khai thành công 8 quy tắc chính sách trên 9 node (6 host + 3 Leaf), với kiến trúc phòng thủ hai tầng (Network Level + Host Level). Kết quả xác minh sẽ được trình bày chi tiết tại Chương 5 thông qua kịch bản kiểm thử ma trận ACL tự động (Case 3).

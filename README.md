@@ -62,6 +62,31 @@ Repository này chứa các bài thực hành về thiết kế và triển khai
 
 ---
 
+### [Lab 4: Packet Analysis](./Lab4/)
+**Chủ đề:** Phân tích Gói Tin & Troubleshooting Mạng
+
+| Mục | Nội dung |
+|:---|:---|
+| **Công nghệ** | Wireshark, Tshark, PCAP, TCP/IP Suite |
+| **Kịch bản** | Phân tích lưu lượng đa vùng OSPF, bắt chi tiết gói giao thức. |
+| **Mục tiêu** | Đọc hiểu sơ đồ bản tin L2/L3/L4, phân loại bản tin Hello/LSA. |
+| **Điểm nổi bật** | Troubleshooting OSPF Neighbor Adjacency và ACL blocking logic. |
+
+---
+
+### [Lab 5: IPv6 Spine-Leaf Data Center (Final Lab)](./Lab5_Final/)
+**Chủ đề:** Mô Hình Data Center Hiện Đại & Web Dashboard Giám Sát
+
+| Mục | Nội dung |
+|:---|:---|
+| **Công nghệ** | Spine-Leaf Architecture, Pure IPv6, Tayga NAT64, Zero Trust Micro-segmentation, Web Dashboard (Flask/Chart.js). |
+| **Kịch bản** | Triển khai trung tâm dữ liệu thế hệ mới cho nền tảng web đa cụm (Web, DNS, Database). |
+| **Mục tiêu** | Hiệu năng cao (ECMP), An ninh đa lớp, Chuyển đổi linh hoạt IPv6<->IPv4. |
+| **Điểm nổi bật** | Giao diện Web Monitor Dashboard trực quan đo lường độ trễ RTT, kiểm thử Tắc nghẽn mạng (Failover/ECMP Load Balance), tự động xuất dữ liệu đồ thị `.png` & phổ `.csv`. |
+| **Phân tích** | ECMP Link chia tải thời gian thực, Hội tụ mạng trong 0.x mili-giây. |
+
+---
+
 **OS khuyến nghị:** Ubuntu 20.04+, Kali Linux, Debian 11+
 
 ---

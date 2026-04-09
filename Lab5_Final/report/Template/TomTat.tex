@@ -1,0 +1,16 @@
+\section*{TÓM TẮT}
+
+Trong bối cảnh cạn kiệt không gian địa chỉ IPv4 và nhu cầu mở rộng quy mô hạ tầng trung tâm dữ liệu ngày càng tăng, việc chuyển đổi sang kiến trúc mạng Pure IPv6 kết hợp mô hình Leaf-Spine đã trở thành xu thế tất yếu của ngành công nghiệp điện toán đám mây hiện đại. Báo cáo thực hành này trình bày quá trình thiết kế, triển khai và đánh giá một hệ thống trung tâm dữ liệu mô phỏng hoàn chỉnh trên nền tảng Mininet và FRRouting, tích hợp đồng thời năm công nghệ mạng tiên tiến: Định tuyến động OSPFv3, Cân bằng tải ECMP (Equal-Cost Multi-Path), Tường lửa vi mô Zero Trust (Micro-segmentation), Mạng phủ VXLAN (Virtual Extensible LAN) và Dịch vụ biên dịch NAT64.
+
+Báo cáo được tổ chức thành 5 chương:
+\begin{enumerate}
+    \item \textbf{Chương 1 — Kiến trúc Leaf-Spine và Xu hướng Data Center:} Phân tích lý do chuyển đổi từ mô hình truyền thống ba tầng sang Leaf-Spine Folded-Clos Fabric.
+    \item \textbf{Chương 2 — Cấu hình OSPF và ECMP:} Kỹ thuật triển khai OSPFv3, VXLAN Overlay L3VNI và tối ưu hóa băng thông đường truyền trục chính bằng cơ chế ECMP đa luồng.
+    \item \textbf{Chương 3 — Bảo mật Zero Trust và Micro-segmentation:} Chi tiết cách triển khai 8 quy tắc ACL mức độ ``tế bào'' bằng ip6tables trên hai tầng phòng thủ để bảo vệ Server.
+    \item \textbf{Chương 4 — Chuyển đổi giao thức IPv4-IPv6 với NAT64:} Thực nghiệm triển khai Tayga NAT64 trên Border Router, đánh giá khả năng tương thích ngược của hệ thống IPv6.
+    \item \textbf{Chương 5 — Đánh giá hiệu năng và Kết luận:} Phân tích bảng số liệu Throughput, đồ thị thời gian hội tụ OSPFv3, bảng kiểm soát lỗ hổng bị chặn bởi Micro-segmentation, kết quả ECMP hop-by-hop.
+\end{enumerate}
+
+Kết quả thực nghiệm qua 5 kịch bản đo lường tự động đã chứng minh: thời gian hội tụ OSPFv3 khoảng 24--27 giây, ECMP tăng băng thông 2,36 lần với Multi Flow, và 100\% chính sách Zero Trust ACL hoạt động chính xác trên 64 cặp nguồn-đích.
+
+\newpage
